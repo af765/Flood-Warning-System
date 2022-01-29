@@ -53,22 +53,28 @@ def stations_by_river(stations):
     
     return river_dict
 
-#def rivers_by_station_number(stations, N):
-    #riversList = stations_by_river(stations)
-   # riverNumber = [()]
-   # for river, stationList in riversList:
-       # riverNumber.append(river, len(stationList))
+def rivers_by_station_number(stations, N):
+    """Returns a list of N tuples on the form (river name, number of stations on the river). These tuples are sorted in decreasing order of station numbers. 
+    If many stations have the same number of stations as the 'Nth' river, these are also included."""
     
-  #  riverNumber.sort(key= lambda x:x[1])
-   # extraStations = 0
+    riversList = stations_by_river(stations) #Get list of rivers to consider
+    riverNumber = []
+    for River in riversList:
+        riverNumber.append((River, len(riversList[River]))) #Get tuple of (river name, number of stations)
 
-   # for i in range(N, len(riverNumber)):
-       # if riverNumber[i][1] == riverNumber[N-1][1]:
-       #     extraStations += 1
-      #  else:
-       #     break
+    riverNumber.sort(key= lambda x:x[1], reverse=True) #Sort into decreasing numerical order
     
-  #  N += extraStations
-  #  return riverNumber[:N] #This may need to be N+1
+    #This code is used to include any rivers with equal number of stations to the 'final' one being output.
+    extraStations = 0
+
+#search through next few rivers to see how many have the same number of stations
+    for i in range(N, len(riverNumber)):
+        if riverNumber[i][1] == riverNumber[N-1][1]:
+            extraStations += 1
+        else:
+            break #as items pre-sorted once the number is not equal can exit
+    
+    N += extraStations #adjust value of N
+    return riverNumber[:N] #Return sliced array.
 
 
