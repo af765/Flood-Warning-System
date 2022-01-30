@@ -6,8 +6,11 @@ geographical data.
 
 """
 
+from os import access
 from .utils import sorted_by_key  # noqa
 from haversine import haversine
+import plotly.graph_objects as go
+from numpy import average
 
 
 def stations_by_distance(stations, p):
@@ -78,3 +81,29 @@ def rivers_by_station_number(stations, N):
     return riverNumber[:N] #Return sliced array.
 
 
+def displayStationLocation(stations, type = "basic"):
+    """Displays a map showing the location of stations inputted. The inputs are:
+        stations: A list of MonitoringStation objects to plot
+        type: The type of map to plot. See https://plotly.com/python/mapbox-layers/#base-maps-in-layoutmapboxstyle for more details"""
+    accessToken = "pk.eyJ1IjoidGpnNDkiLCJhIjoiY2t6MXFkZjk0MWlkNDJ2cXZoZ2VrbHUxZCJ9.q0CEoPcRyNTMzNS3_RyZFA"
+    lattitude = []
+    longitude = []
+    name = []
+    for station in stations:
+        lattitude.append(station.coord[0])
+        longitude.append(station.coord[1])
+        name.append("Station Name: {}\n River: {}".format(station.name, station.river))
+    initialLongitude = average(longitude)
+    initialLattitude = average(lattitude)
+    fig = go.Figure(go.Scattermapbox(lat=lattitude, lon=longitude, mode = 'markers', marker = go.scattermapbox.Marker(size = 9), text=name))
+    fig.update_layout(mapbox_style = type,autosize=True, hovermode='closest', mapbox=dict(accesstoken=accessToken,bearing=0, center=dict(lat=initialLattitude,lon=initialLongitude),pitch=0,zoom=7))
+    fig.show()
+
+def stationObjectsByRiver(stations, rivers):
+    """Returns a list of Monitoring Station objects which are on the rivers input"""
+    stationObjectsByRiverOutput = []
+    for river in rivers:
+        for station in stations:
+            if station.river==river:
+                stationObjectsByRiverOutput.append(station)
+    return stationObjectsByRiverOutput
