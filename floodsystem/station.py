@@ -38,3 +38,19 @@ class MonitoringStation:
         d += "   river:         {}\n".format(self.river)
         d += "   typical range: {}".format(self.typical_range)
         return d
+
+    def typical_range_consistent(self):
+        """Works out if the tide values or nonsensical or not"""
+        if (self.typical_range == None) or (self.typical_range[0]>self.typical_range[1]):
+            return False
+        else:
+            return True
+
+def inconsistent_typical_range_stations(stations):
+    """Returns a list of stations with inconsistent height tide values"""
+    inconsistent_stations = []
+    for station in stations:
+        if station.typical_range_consistent() == False:
+
+            inconsistent_stations.append(station.name)
+    return inconsistent_stations
