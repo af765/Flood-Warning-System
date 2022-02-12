@@ -10,3 +10,6 @@ def stations_level_over_threshold(stations, tol):
     stations_over_tol = sorted_by_key(stations_over_tol, 1)
     stations_over_tol.reverse()
     return stations_over_tol
+
+def stations_highest_rel_level(stations, N):
+    return stations_level_over_threshold(stations, 0.8)[:N]
