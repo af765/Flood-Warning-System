@@ -39,8 +39,6 @@ for station in stations:
 #update current water levels
 update_water_levels(stations)
 
-#Define variables used to assign status
-
 #create dictionary to store status of each station
 statusDictionary = {}
 for station in stations:
@@ -51,25 +49,22 @@ newStations = []
 currentLevels = []
 for newStationTuple in NewStationListTuple:
     newStations.append(newStationTuple[0])
-    currentLevels.append(newStationTuple[1])
 
 #Create initial risk only based on current water level. Parameters for this can be adjusted above
 for newStation in newStations:
     statusDictionary[newStation.name] = weightRelativeLevel*(newStation.relative_water_level()**orderOfInitialAssignment)
 
-#print(statusDictionary)
-
-dataLevels = [] #contains array of tuples (dates, levels)
+dateLevels = [] #contains array of tuples (dates, levels)
 for newStation in newStations:
-    dataLevels.append(fetch_measure_levels(newStation.measure_id, dt=datetime.timedelta(days=daysToConsider)))
+    dateLevels.append(fetch_measure_levels(newStation.measure_id, dt=datetime.timedelta(days=daysToConsider)))
     print("station {} complete".format(newStation.name))
 
 
 print("STATUS: Moving onto polynomials and Derivatives")
 #create polynomial fits for each station's data. This should still be ordered the same as the original stations array
 polyArray = []
-for dataLevel in dataLevels:
-    polyArray.append(polyfit(dataLevel[0], dataLevel[1], 5))
+for dateLevel in dateLevels:
+    polyArray.append(polyfit(dateLevel[0], dateLevel[1], 5))
 
 #Evaluate the value of the derivative (slope) at current time. This should give a warning as to how the water level is changing, and whether it is worrying
 polyDerivative = []
