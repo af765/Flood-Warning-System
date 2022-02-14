@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 from matplotlib.dates import date2num
-from numpy import linspace
 from datetime import datetime, timedelta
 from .analysis import polyfit
 from .datafetcher import fetch_measure_levels
@@ -21,8 +20,7 @@ def plot_water_levels(station, dates, levels):
     plt.title(station.name)
 
     # Display plot
-    plt.tight_layout()  # This makes sure plot does not cut off date labels
-
+    plt.tight_layout()  # This makes sure plot does not cut off date labels\
     plt.show()
 
 if __name__ == "__main__":
