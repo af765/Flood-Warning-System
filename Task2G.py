@@ -3,28 +3,67 @@ from matplotlib.dates import date2num
 from  floodsystem.analysis import polyfit
 from floodsystem.datafetcher import fetch_measure_levels
 from floodsystem.geo import displayStationLocation, stations_by_river, stations_within_radius
-from floodsystem.plot import plot_water_levels
+from floodsystem.plot import plot_water_level_with_fit, plot_water_levels
 from floodsystem.station import inconsistent_typical_range_stations
 from floodsystem.stationdata import build_station_list, update_water_levels
 import numpy as np
 import datetime
 
-#Constants to adjust graphing results:
-weightRelativeLevel = 5
-weightRisingWaterLevel = 0.5
-weightFallingWaterLevel = 0.3
-stationWithinRadiusToCheck = [5,15,45,100]
-stationWithinRadiusWeight = [0.15, 0.1, 0.05, 0.025]
-stationOnRiverWeight = 0
-SevereCutOff = 60
-HighCutOff = 40
-ModerateCutOff = 25
-LowCutOff = 10
-orderOfInitialAssignment = 3
-orderofRisingLevel = 1.4
-minimumLevel = 1.2
-daysToConsider = 1
+###Areas to improve:
+    #Better method for computing a point on the polynomial fit. Very flat lines have sharp rises at the end, 'tricking' the algorithm into thinking there is an issue
+    #Calibrate the below numbers, rather than taking 'guesses'
 
+
+#Constants to adjust graphing results:
+weightRelativeLevel = 5 #weight of the current water level
+weightRisingWaterLevel = 0.5 #weight of rising water level
+weightFallingWaterLevel = 0.3 #weight of lowering water level
+stationWithinRadiusToCheck = [5,15,45,100] #distances from stations to check
+stationWithinRadiusWeight = [0.15, 0.1, 0.05, 0.025] #weights of each distance above. Note that these are additive
+stationOnRiverWeight = 0 #on the same river weight
+cutoff = [150,100,60,30] #severe, high, moderate, low. Note these values are dependent on minimum level
+orderOfInitialAssignment = 3 #the power that the current water level is taken to
+orderofRisingLevel = 1.4 #the power that the rising water level is taken to
+minimumLevel = 1 #minimum relative water level to consider rivers for further analysis
+daysToConsider = 1 #how many days to consider for polynomial plot
+output = ["Severe"] #"Severe", "High", "Moderate", "Low", "No Risk"
+
+#Output Function defined for use later. In practice this would be moved to another file then imported in.
+def OutputData(stations,statusDictionary, warningLevel, levelCutoff):
+    """Function takes in a list of stations, the status dictionary and the desired warning levels, then plots the location of the most vulnerable stations and outputs a list of most vulnerable towns"""
+    output = []
+    for station in stations:
+        if ("Severe" in warningLevel) and (statusDictionary[station.name] >= levelCutoff[0]):
+                output.append((station, statusDictionary[station.name]))
+        if "High" in warningLevel:
+            if (statusDictionary[station.name] < levelCutoff[0]) and statusDictionary[station.name] >= levelCutoff[1]:
+                output.append((station, statusDictionary[station.name]))
+        if "Moderate" in warningLevel:
+            if (statusDictionary[station.name] < levelCutoff[1]) and statusDictionary[station.name] >= levelCutoff[2]:
+                output.append((station, statusDictionary[station.name]))
+        if "low" in warningLevel:
+            if (statusDictionary[station.name] < levelCutoff[2]) and statusDictionary[station.name] >= levelCutoff[3]:
+                output.append((station, statusDictionary[station.name]))
+        if "NoRisk" in warningLevel and statusDictionary[station.name] < levelCutoff[3]:
+                output.append((station, statusDictionary[station.name]))
+
+    outputStationList = []
+    for element in output:
+        outputStationList.append(element[0])
+
+    print("STATUS: Attempting to plot level graphs of stations with {} level warning".format(warningLevel)) 
+    for outputStation in outputStationList:
+            dt = 2
+            dates, levels = fetch_measure_levels(outputStation.measure_id, dt=datetime.timedelta(days=5))
+            plot_water_levels(outputStation, dates, levels)
+            #plot_water_level_with_fit(outputStation, dates, levels, 5)
+    if outputStationList != None:
+        displayStationLocation(outputStationList)
+    else:
+        print("STATUS: No Severe Level Status Rivers")
+    mostVulnerableTowns = [i.town for i in outputStationList]
+    print(mostVulnerableTowns)
+    return(mostVulnerableTowns)
 
 
 #Create list of stations to analyse
@@ -111,34 +150,4 @@ for newStation in newStations:
 
 
 #output a list of  rivers that are most at risk. 
-Severe = []
-High =[]
-Moderate = []
-Low = []
-NoRisk = []
-for station in stations:
-    if statusDictionary[station.name] >= SevereCutOff:
-        Severe.append((station, statusDictionary[station.name]))
-    elif statusDictionary[station.name] >= HighCutOff:
-        High.append((station, statusDictionary[station.name]))
-    elif statusDictionary[station.name] >= ModerateCutOff:
-        Moderate.append((station, statusDictionary[station.name]))
-    elif statusDictionary[station.name] >= LowCutOff:
-        Low.append((station, statusDictionary[station.name]))
-    else:
-        NoRisk.append((station, statusDictionary[station.name]))
-
-SevereStationList = []
-for element in Severe:
-    SevereStationList.append(element[0])
-#print(SevereStationList)
-
-print("STATUS: Attempting to plot level graphs of most vulnerable stations") 
-for severeStation in SevereStationList:
-        dt = 2
-        dates, levels = fetch_measure_levels(severeStation.measure_id, dt=datetime.timedelta(days=5))
-        plot_water_levels(severeStation, dates, levels)
-if SevereStationList != None:
-    displayStationLocation(SevereStationList)
-else:
-    print("STATUS: No Severe Level Status Rivers")
+OutputData(stations, statusDictionary, output, cutoff)
