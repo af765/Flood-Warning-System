@@ -15,16 +15,16 @@ import datetime
 
 
 #Constants to adjust graphing results:
-weightRelativeLevel = 5 #weight of the current water level
-weightRisingWaterLevel = 0.5 #weight of rising water level
-weightFallingWaterLevel = 0.3 #weight of lowering water level
+weightRelativeLevel = 10 #weight of the current water level
+weightRisingWaterLevel = 1 #weight of rising water level
+weightFallingWaterLevel = 0.9 #weight of lowering water level
 stationWithinRadiusToCheck = [5,15,45,100] #distances from stations to check
-stationWithinRadiusWeight = [0.15, 0.1, 0.05, 0.025] #weights of each distance above. Note that these are additive
+stationWithinRadiusWeight = [0.05, 0.01, 0, 0] #weights of each distance above. Note that these are additive
 stationOnRiverWeight = 0 #on the same river weight
 cutoff = [150,100,60,30] #severe, high, moderate, low. Note these values are dependent on minimum level
 orderOfInitialAssignment = 3 #the power that the current water level is taken to
 orderofRisingLevel = 1.4 #the power that the rising water level is taken to
-minimumLevel = 1 #minimum relative water level to consider rivers for further analysis
+minimumLevel = 1.2 #minimum relative water level to consider rivers for further analysis
 daysToConsider = 1 #how many days to consider for polynomial plot
 output = ["Severe"] #"Severe", "High", "Moderate", "Low", "No Risk"
 
@@ -55,14 +55,22 @@ def OutputData(stations,statusDictionary, warningLevel, levelCutoff):
     for outputStation in outputStationList:
             dt = 2
             dates, levels = fetch_measure_levels(outputStation.measure_id, dt=datetime.timedelta(days=5))
-            plot_water_levels(outputStation, dates, levels)
-            #plot_water_level_with_fit(outputStation, dates, levels, 5)
+            try:
+                #plot_water_levels(outputStation, dates, levels)
+                plot_water_level_with_fit(outputStation, dates, levels, 5)
+            except:
+                print("Failed to plot station {}".format(outputStation.name))
+            
     if outputStationList != None:
         displayStationLocation(outputStationList)
     else:
         print("STATUS: No Severe Level Status Rivers")
-    mostVulnerableTowns = [i.town for i in outputStationList]
-    print(mostVulnerableTowns)
+    mostVulnerableTowns = []
+    for i in outputStationList:
+        if i.town != None:
+            mostVulnerableTowns.append(i.town)
+
+    print("The Most Vulnerbale Towns are: {}".format(mostVulnerableTowns))
     return(mostVulnerableTowns)
 
 
@@ -71,9 +79,9 @@ stations = build_station_list()
 
 #Remove any stations which could cause issues due to inconsistent imported data
 inconsistentStations = inconsistent_typical_range_stations(stations)
-for station in stations:
+for i, station in enumerate(stations):
     if station.name in inconsistentStations:
-        stations.pop()
+        stations.pop(i)
 
 #update current water levels
 update_water_levels(stations)
