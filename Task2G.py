@@ -16,7 +16,7 @@ import datetime
 
 #Constants to adjust graphing results:
 weightRelativeLevel = 10 #weight of the current water level
-weightRisingWaterLevel = 1 #weight of rising water level
+weightRisingWaterLevel = 1.5 #weight of rising water level
 weightFallingWaterLevel = 0.9 #weight of lowering water level
 stationWithinRadiusToCheck = [5,15,45,100] #distances from stations to check
 stationWithinRadiusWeight = [0.05, 0.01, 0, 0] #weights of each distance above. Note that these are additive
@@ -56,10 +56,10 @@ def OutputData(stations,statusDictionary, warningLevel, levelCutoff):
             dt = 2
             dates, levels = fetch_measure_levels(outputStation.measure_id, dt=datetime.timedelta(days=5))
             try:
-                #plot_water_levels(outputStation, dates, levels)
-                plot_water_level_with_fit(outputStation, dates, levels, 5)
+                plot_water_levels(outputStation, dates, levels)
+                #plot_water_level_with_fit(outputStation, dates, levels, 5)
             except:
-                print("Failed to plot station {}".format(outputStation.name))
+                print("ERROR: Failed to plot station {}".format(outputStation.name))
             
     if outputStationList != None:
         displayStationLocation(outputStationList)
@@ -69,8 +69,10 @@ def OutputData(stations,statusDictionary, warningLevel, levelCutoff):
     for i in outputStationList:
         if i.town != None:
             mostVulnerableTowns.append(i.town)
+        else:
+            print("RESULT: Station {} has no reported town".format(i.name))
 
-    print("The Most Vulnerbale Towns are: {}".format(mostVulnerableTowns))
+    print("RESULT: The Most Vulnerbale Towns are: {}".format(mostVulnerableTowns))
     return(mostVulnerableTowns)
 
 
@@ -102,16 +104,43 @@ for newStation in newStations:
     statusDictionary[newStation.name] = weightRelativeLevel*(newStation.relative_water_level()**orderOfInitialAssignment)
 
 dateLevels = [] #contains array of tuples (dates, levels)
+
+print("STATUS: Fetching historical Data for required stations")
 for newStation in newStations:
     dateLevels.append(fetch_measure_levels(newStation.measure_id, dt=datetime.timedelta(days=daysToConsider)))
-    print("station {} complete".format(newStation.name))
+    #print("station {} complete".format(newStation.name))
 
 
-print("STATUS: Moving onto polynomials and Derivatives")
+print("STATUS: Calculating polynomials and Derivatives")
 #create polynomial fits for each station's data. This should still be ordered the same as the original stations array
 polyArray = []
-for dateLevel in dateLevels:
-    polyArray.append(polyfit(dateLevel[0], dateLevel[1], 5))
+indicesToRemove = []
+for i, dateLevel in enumerate(dateLevels):
+    try:
+        polyArray.append(polyfit(dateLevel[0], dateLevel[1], 5))
+    except:
+        print("ERROR: No historical data found for station {}. Removing this river from future consideration.".format(newStations[i].name))
+
+        #Create URL to check the data
+        # Current time (UTC)
+        now = datetime.datetime.utcnow()
+        dt=datetime.timedelta(days=10)
+        # Start time for data
+        start = now - dt
+
+        # Construct URL for fetching data
+        url_base = newStations[i].measure_id
+        url_options = "/readings/?_sorted&since=" + start.isoformat() + 'Z'
+        url = url_base + url_options
+        print("Link to view data: {}".format(url))
+        indicesToRemove.append(i)
+
+        newStations.pop(i) #remove incompatable station
+
+#remove required entries from the DateLevels array:
+for index in sorted(indicesToRemove, reverse=True): #Go in reverse order to not screw with indices. 
+    del dateLevels[index]
+
 
 #Evaluate the value of the derivative (slope) at current time. This should give a warning as to how the water level is changing, and whether it is worrying
 polyDerivative = []
