@@ -11,7 +11,7 @@ def test_polyfit():
 
     # Find station 'Cam'
     for station in stations:
-        if station.name == 'Cam':
+        if station.name == 'Girton':
             station_cam = station
             break
 
