@@ -90,9 +90,10 @@ def displayStationLocation(stations, type = "basic"):
     longitude = []
     name = []
     for station in stations:
-        lattitude.append(station.coord[0])
-        longitude.append(station.coord[1])
-        name.append("Station Name: {}\n River: {}".format(station.name, station.river))
+        if station.coord[0] != None and station.coord[1] != None:
+            lattitude.append(station.coord[0])
+            longitude.append(station.coord[1])
+            name.append("Station Name: {}\n River: {}".format(station.name, station.river))
     initialLongitude = average(longitude)
     initialLattitude = average(lattitude)
     fig = go.Figure(go.Scattermapbox(lat=lattitude, lon=longitude, mode = 'markers', marker = go.scattermapbox.Marker(size = 9), text=name))

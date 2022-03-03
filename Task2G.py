@@ -41,7 +41,7 @@ def OutputData(stations,statusDictionary, warningLevel, levelCutoff):
         if "Moderate" in warningLevel:
             if (statusDictionary[station.name] < levelCutoff[1]) and statusDictionary[station.name] >= levelCutoff[2]:
                 output.append((station, statusDictionary[station.name]))
-        if "low" in warningLevel:
+        if "Low" in warningLevel:
             if (statusDictionary[station.name] < levelCutoff[2]) and statusDictionary[station.name] >= levelCutoff[3]:
                 output.append((station, statusDictionary[station.name]))
         if "NoRisk" in warningLevel and statusDictionary[station.name] < levelCutoff[3]:
